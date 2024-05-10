@@ -5,21 +5,12 @@ fn main() {
 }
 
 #[component]
-fn ProgressBar(#[prop(optional)] progress: Option<Box<dyn Fn() -> i32>>) -> impl IntoView {
-    progress.map(|progress| {
-        view! { <progress max=100 value=progress></progress> }
-    })
-}
-
-#[component]
 pub fn App() -> impl IntoView {
-    let (count, set_count) = create_signal(0);
+    let values = vec![0, 1, 2];
+
     view! {
-        <button on:click=move |_| {
-            set_count.update(|n| *n += 1);
-        }>"Click me"</button>
-        <br/>
-        <br/>
-        <ProgressBar progress=Box::new(count)/>
+        <p>{values.clone()}</p>
+        // or we can wrap them in li
+        <ul>{values.into_iter().map(|n| view! { <li>{n}</li> }).collect::<Vec<_>>()}</ul>
     }
 }
