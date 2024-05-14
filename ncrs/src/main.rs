@@ -4,11 +4,9 @@ use std::{
     net::{SocketAddr, TcpListener, TcpStream},
 };
 
-mod args;
-
 fn main() {
     let mut args = env::args();
-    let conf = match args::parse_args(&mut args) {
+    let conf = match ncrs::parse_args(&mut args) {
         Ok(conf) => conf,
         Err(e) => {
             eprintln!("error while parsing arguments: {}", e);
