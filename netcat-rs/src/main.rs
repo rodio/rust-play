@@ -6,7 +6,7 @@ use std::{
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    let conf = match ncrs::parse_args(args) {
+    let conf = match netcat_rs::parse_args(args) {
         Ok(conf) => conf,
         Err(e) => {
             eprintln!("error while parsing arguments: {}", e);
