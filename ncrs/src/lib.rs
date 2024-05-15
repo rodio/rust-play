@@ -1,11 +1,11 @@
 use core::fmt;
 use std::{
-    env::Args,
     fmt::{Display, Formatter},
     net::{AddrParseError, IpAddr},
     num::ParseIntError,
 };
 
+#[derive(Debug)]
 pub enum ArgsErr {
     PortNotSpecifiedErr,
     PortParsingErr(ParseIntError),
@@ -32,23 +32,25 @@ impl Display for ArgsErr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Config {
     pub port: Option<u16>,
     pub host: Option<IpAddr>,
     pub listen: Option<bool>,
 }
 
-pub fn parse_args(args: &mut Args) -> Result<Config, ArgsErr> {
+pub fn parse_args(args: Vec<String>) -> Result<Config, ArgsErr> {
     let mut config = Config {
         port: None,
         host: None,
         listen: None,
     };
 
-    args.next(); // skipping the binary name
+    for (i, a) in args.iter().enumerate() {
+        if i == 0 {
+            continue;
+        }
 
-    while let Some(a) = args.next() {
         match a.as_ref() {
             "-l" | "--listen" => {
                 config.listen = Some(true);
@@ -82,4 +84,27 @@ pub fn parse_args(args: &mut Args) -> Result<Config, ArgsErr> {
     }
 
     Ok(config)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn listen() {
+        let args = vec![
+            "/path/to/bin".to_string(),
+            "--listen".to_string(),
+            "127.0.0.1".to_string(),
+            "8080".to_string(),
+        ];
+        let conf = parse_args(args).unwrap();
+        let expected = Config {
+            listen: Some(true),
+            port: Some(8080),
+            host: Some(IpAddr::from([127, 0, 0, 1])),
+        };
+        assert_eq!(conf, expected);
+    }
 }

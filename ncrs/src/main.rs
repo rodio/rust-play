@@ -5,8 +5,8 @@ use std::{
 };
 
 fn main() {
-    let mut args = env::args();
-    let conf = match ncrs::parse_args(&mut args) {
+    let args: Vec<_> = env::args().collect();
+    let conf = match ncrs::parse_args(args) {
         Ok(conf) => conf,
         Err(e) => {
             eprintln!("error while parsing arguments: {}", e);
