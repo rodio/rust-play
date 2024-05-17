@@ -83,6 +83,10 @@ pub fn parse_args(args: Vec<String>) -> Result<Config, ArgsErr> {
         return Err(ArgsErr::HostNotSpecifiedErr);
     }
 
+    if config.listen.is_none() {
+        config.listen = Some(false);
+    }
+
     Ok(config)
 }
 
@@ -102,6 +106,22 @@ mod tests {
         let conf = parse_args(args).unwrap();
         let expected = Config {
             listen: Some(true),
+            port: Some(8080),
+            host: Some(IpAddr::from([127, 0, 0, 1])),
+        };
+        assert_eq!(conf, expected);
+    }
+
+    #[test]
+    fn connect() {
+        let args = vec![
+            "/path/to/bin".to_string(),
+            "127.0.0.1".to_string(),
+            "8080".to_string(),
+        ];
+        let conf = parse_args(args).unwrap();
+        let expected = Config {
+            listen: Some(false),
             port: Some(8080),
             host: Some(IpAddr::from([127, 0, 0, 1])),
         };

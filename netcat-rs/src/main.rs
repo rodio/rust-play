@@ -1,6 +1,6 @@
 use std::{
-    env::{self},
-    io::Read,
+    env,
+    io::{self, stdin, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
 };
 
@@ -16,25 +16,51 @@ fn main() {
 
     dbg!(&conf);
 
-    if let (Some(port), Some(host), Some(_)) = (conf.port, conf.host, conf.listen) {
-        let listener = match TcpListener::bind(SocketAddr::new(host, port)) {
-            Ok(listener) => listener,
-            Err(e) => {
-                eprintln!("can't bind: {}", e);
-                std::process::exit(1);
+    if let (Some(port), Some(host), Some(listen)) = (conf.port, conf.host, conf.listen) {
+        let socket_addr = SocketAddr::new(host, port);
+        if listen {
+            match do_listen(socket_addr) {
+                Err(e) => {
+                    eprintln!("Error while listening: {}", e);
+                    std::process::exit(1);
+                }
+                _ => (),
+            };
+        } else {
+            match do_connect(socket_addr) {
+                Err(e) => {
+                    eprintln!("Error while connecting: {}", e);
+                    std::process::exit(1);
+                }
+                _ => (),
             }
-        };
-
-        for stream in listener.incoming() {
-            let v = handle_client(stream.unwrap()).unwrap();
-            println!("{:?}", String::from_utf8(v));
         }
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> Result<Vec<u8>, std::io::Error> {
+fn do_listen(socket_addr: SocketAddr) -> io::Result<()> {
+    let listener = TcpListener::bind(socket_addr)?;
+
+    // TODO receive only one connection and return io::Error::new(Utf8Error, error)
+    for stream in listener.incoming() {
+        let mut stream = stream?;
+
+        let mut buf = Vec::new();
+        stream.read_to_end(&mut buf)?;
+
+        match String::from_utf8(buf) {
+            Ok(s) => println!("{}", s),
+            Err(e) => eprintln!("Can't convert to utf8: {}", e),
+        };
+    }
+    Ok(())
+}
+
+fn do_connect(socket_addr: SocketAddr) -> io::Result<usize> {
+    let mut stream = TcpStream::connect(socket_addr)?;
+
     let mut buf = Vec::new();
-    let result = stream.read_to_end(&mut buf);
-    result?;
-    Ok(buf.to_vec())
+    stdin().lock().read_to_end(&mut buf)?;
+
+    stream.write(buf.as_slice())
 }
