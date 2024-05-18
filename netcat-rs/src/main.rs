@@ -1,12 +1,11 @@
-use std::{
-    env,
-    io::{self, stdin, Read, Write},
-    net::{SocketAddr, TcpListener, TcpStream},
-};
+use std::{env, net::SocketAddr};
+
+mod arguments;
+mod connections;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
-    let conf = match netcat_rs::parse_args(args) {
+    let conf = match arguments::parse_args(args) {
         Ok(conf) => conf,
         Err(e) => {
             eprintln!("error while parsing arguments: {}", e);
@@ -19,15 +18,15 @@ fn main() {
     if let (Some(port), Some(host), Some(listen)) = (conf.port, conf.host, conf.listen) {
         let socket_addr = SocketAddr::new(host, port);
         if listen {
-            match do_listen(socket_addr) {
+            match connections::do_listen(socket_addr) {
                 Err(e) => {
                     eprintln!("Error while listening: {}", e);
                     std::process::exit(1);
                 }
-                _ => (),
+                Ok(s) => println!("{}", s),
             };
         } else {
-            match do_connect(socket_addr) {
+            match connections::do_connect(socket_addr) {
                 Err(e) => {
                     eprintln!("Error while connecting: {}", e);
                     std::process::exit(1);
@@ -36,27 +35,4 @@ fn main() {
             }
         }
     }
-}
-
-fn do_listen(socket_addr: SocketAddr) -> io::Result<()> {
-    let listener = TcpListener::bind(socket_addr)?;
-
-    // TODO receive only one connection and return io::Error::new(Utf8Error, error)
-    let (mut stream, _) = listener.accept()?;
-
-    let mut buf = Vec::new();
-    stream.read_to_end(&mut buf)?;
-
-    let s = String::from_utf8(buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    println!("{}", s);
-    Ok(())
-}
-
-fn do_connect(socket_addr: SocketAddr) -> io::Result<usize> {
-    let mut stream = TcpStream::connect(socket_addr)?;
-
-    let mut buf = Vec::new();
-    stdin().lock().read_to_end(&mut buf)?;
-
-    stream.write(buf.as_slice())
 }
