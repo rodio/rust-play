@@ -42,17 +42,13 @@ fn do_listen(socket_addr: SocketAddr) -> io::Result<()> {
     let listener = TcpListener::bind(socket_addr)?;
 
     // TODO receive only one connection and return io::Error::new(Utf8Error, error)
-    for stream in listener.incoming() {
-        let mut stream = stream?;
+    let (mut stream, _) = listener.accept()?;
 
-        let mut buf = Vec::new();
-        stream.read_to_end(&mut buf)?;
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf)?;
 
-        match String::from_utf8(buf) {
-            Ok(s) => println!("{}", s),
-            Err(e) => eprintln!("Can't convert to utf8: {}", e),
-        };
-    }
+    let s = String::from_utf8(buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    println!("{}", s);
     Ok(())
 }
 
